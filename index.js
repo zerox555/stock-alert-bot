@@ -59,7 +59,7 @@ setInterval(async () => {
             }
         }
     }
-}, 30000); // Check every 30 seconds
+}, 30000); // Check every 60 seconds
 
 // Event: When the bot is ready
 client.once('ready', () => {
@@ -69,6 +69,36 @@ client.once('ready', () => {
 // Event: When a message is sent
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
+
+    // Help command
+    if (message.content.startsWith('!help')) {
+        const helpMessage = `
+**📖 Available Commands:**
+
+1. **Set an Alert**:
+   - Usage: \`!alert add <symbol> > or < <price>\`
+   - Example: \`!alert add AAPL > 150\` (Alert when AAPL is above $150)
+   - Example: \`!alert add TSLA < 700\` (Alert when TSLA is below $700)
+
+2. **Remove an Alert**:
+   - Usage: \`!alert remove <symbol>\`
+   - Example: \`!alert remove AAPL\`
+
+3. **List Alerts**:
+   - Usage: \`!alert list\`
+   - Displays all your active alerts.
+
+4. **Get Stock Price**:
+   - Usage: \`!stock <symbol>\`
+   - Example: \`!stock AAPL\`
+
+5. **Help**:
+   - Usage: \`!help\`
+   - Displays this help message.
+`;
+        message.reply(helpMessage);
+        return;
+    }
 
     // Add alert
     if (message.content.startsWith('!alert add')) {
@@ -121,6 +151,24 @@ client.on('messageCreate', async (message) => {
             .map(([symbol, { price, condition }]) => `**${symbol}**: ${condition} $${price}`)
             .join('\n');
         message.reply(`Your active alerts:\n${alertList}`);
+    }
+
+    // Get stock price
+    if (message.content.startsWith('!stock')) {
+        const args = message.content.split(' ');
+        const symbol = args[1]?.toUpperCase();
+
+        if (!symbol) {
+            return message.reply('Usage: `!stock <symbol>`');
+        }
+
+        try {
+            const price = await getStockPrice(symbol);
+            message.reply(`**${symbol}** is currently at $${price}`);
+        } catch (error) {
+            console.error('Error fetching stock data:', error);
+            message.reply('An error occurred while fetching stock data. Please try again later.');
+        }
     }
 });
 
